@@ -1,8 +1,15 @@
 package http_message;
 
-import java.util.HashMap;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 import static java.lang.Integer.parseInt;
+
 
 public class HTTPResponse extends HTTPMessage{
 
@@ -17,6 +24,10 @@ public class HTTPResponse extends HTTPMessage{
         reasonPhrase = args[2];
     }
 
+    public String getStatusLine() {
+        return version + " " + responseCode + " " + reasonPhrase;
+    }
+
     public String getReasonPhrase() {
         return reasonPhrase;
     }
@@ -29,6 +40,21 @@ public class HTTPResponse extends HTTPMessage{
         return responseCode;
     }
 
+    public ArrayList<URI> getImageLinks() {
+        ArrayList<URI> linkList = new ArrayList<>();
+        Document document = Jsoup.parse(getMessageBody());
+        Elements images = document.getElementsByTag("img");
+        for (Element image : images) {
+            String link = image.attr("src");
+            try {
+                linkList.add(new URI(link));
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return linkList;
+    }
 
     @Override
     public String toString() {
