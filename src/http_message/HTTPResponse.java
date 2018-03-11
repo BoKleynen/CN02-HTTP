@@ -56,8 +56,14 @@ public class HTTPResponse extends HTTPMessage{
         return linkList;
     }
 
-    @Override
-    public String toString() {
-        return null;
+    public void print() {
+        System.out.println(getStatusLine());
+        System.out.println(getHeaderString());
+        System.out.println();
+        System.out.println(getMessageBody());
+    }
+
+    public void getEmbeddedImages() {
+
     }
 }

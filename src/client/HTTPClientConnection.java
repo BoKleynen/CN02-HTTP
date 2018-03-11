@@ -41,19 +41,20 @@ public class HTTPClientConnection {
             response.addHeader(responseLine);
         }
 
-        StringBuilder responseBody = new StringBuilder();
-        while (((responseLine = inFromServer.readLine()).length() != 0)) {
-            responseBody.append(responseLine);
-            responseBody.append("\r\n");
-        }
-
-        String contentType = response.getHeaders().get("content-type");
-        if (contentType != null && contentType.startsWith("text/html")) {
-            PrintWriter htmlWriter = new PrintWriter("../../out/output.html");
-            htmlWriter.print(response.getMessageBody());
-            htmlWriter.close();
-        }
-        response.setBody(responseBody.toString());
+//        StringBuilder responseBody = new StringBuilder();
+//        while (((responseLine = inFromServer.readLine()).length() != 0)) {
+//            responseBody.append(responseLine);
+//            responseBody.append("\r\n");
+//        }
+//        response.setBody(responseBody.toString());
+//        System.out.println("got body");
+//
+//        String contentType = response.getHeaders().get("content-type");
+//        if (contentType != null && contentType.startsWith("text/html")) {
+//            PrintWriter htmlWriter = new PrintWriter("../../out/output.html");
+//            htmlWriter.print(response.getMessageBody());
+//            htmlWriter.close();
+//        }
 
         return response;
     }

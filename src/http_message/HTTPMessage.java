@@ -58,7 +58,4 @@ public abstract class HTTPMessage {
 
         return headerString.toString();
     }
-
-    @Override
-    public abstract String toString();
 }

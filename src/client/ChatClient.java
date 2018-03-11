@@ -22,7 +22,7 @@ public class ChatClient {
                 args = inputLine.split(" ");
             }
 
-            if (args.length != 3) {
+            if (args.length < 2) {
                 System.err.println("incorrect HTTP command formatting");
             }
 
@@ -52,7 +52,8 @@ public class ChatClient {
                 }
 
                 HTTPClientConnection client = new HTTPClientConnection(uri.getHost(), port);
-                HTTPResponse reponse = client.sendRequest(request);
+                HTTPResponse response = client.sendRequest(request);
+                response.print();
 
             } catch (Exception e) {
                 e.printStackTrace();
