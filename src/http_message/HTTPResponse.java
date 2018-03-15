@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 import static java.lang.Integer.parseInt;
+import static java.util.Arrays.copyOfRange;
 
 
 public class HTTPResponse extends HTTPMessage{
@@ -21,7 +22,12 @@ public class HTTPResponse extends HTTPMessage{
         String args[] = statusLine.split(" ");
         version = args[0];
         responseCode = parseInt(args[1]);
-        reasonPhrase = args[2];
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String str : copyOfRange(args, 2, args.length)) {
+            stringBuilder.append(str);
+            stringBuilder.append(" ");
+        }
+        reasonPhrase = stringBuilder.toString();
     }
 
     public String getStatusLine() {
@@ -63,7 +69,15 @@ public class HTTPResponse extends HTTPMessage{
         System.out.println(getMessageBody());
     }
 
-    public void getEmbeddedImages() {
-
+    /**
+     * @return  -1 if the formatting of the Content-Length header is invalid, otherwise
+     *          return the length of the body of this response as contained within the header.
+     */
+    public int getContentLength() {
+        try {
+            return parseInt(getHeader("Content-Length").split(": ")[1]);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 }
