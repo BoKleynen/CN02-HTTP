@@ -70,13 +70,13 @@ public class HTTPResponse extends HTTPMessage{
     }
 
     /**
-     * @return  -1 if the formatting of the Content-Length header is invalid, otherwise
+     * @return  -1 if the Content-Length header is absent or invalid, otherwise
      *          return the length of the body of this response as contained within the header.
      */
     public int getContentLength() {
         try {
             return parseInt(getHeader("Content-Length").split(": ")[1]);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException | NullPointerException e) {
             return -1;
         }
     }

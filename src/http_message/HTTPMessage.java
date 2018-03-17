@@ -7,17 +7,13 @@ import java.util.HashMap;
  */
 public abstract class HTTPMessage {
 
-    public static final String CRLF = "\r\n";
+    static final String CRLF = "\r\n";
 
     private HashMap<String, String> headers = new HashMap<>();
     private String messageBody;
     final String version = "HTTP/1.1";
 
-    /**
-     *
-     * @param name
-     * @param value
-     */
+
     public void addHeader(String name, String value) {
         headers.put(name, value);
     }
