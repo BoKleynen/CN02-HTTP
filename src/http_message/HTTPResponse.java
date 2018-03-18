@@ -84,7 +84,14 @@ public class HTTPResponse extends HTTPMessage{
         }
     }
 
-    public void saveToFile() {
-
+    public String toString() {
+        String s = version + responseCode + reasonPhrase + CRLF +
+                getHeaderString() + CRLF;
+        if (getMessageBody() == null)  {
+            return s;
+        }
+        else {
+            return s + getMessageBody() + CRLF;
+        }
     }
 }
