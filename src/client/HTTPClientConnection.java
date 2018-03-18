@@ -2,26 +2,26 @@ package client;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.URISyntaxException;
-
+import java.net.URI;
+import java.util.ArrayList;
 import http_message.HTTPRequest;
 import http_message.HTTPResponse;
-
-import org.jsoup.Jsoup;
-
+import http_message.BufferedInputStream;
 import static java.net.InetAddress.getByName;
+import static java.lang.Integer.parseInt;
 
+
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class HTTPClientConnection {
 
     private Socket socket;
     private DataOutputStream outToServer;
     private BufferedReader inFromServer;
-    private String host;
 
     HTTPClientConnection(String host, int port) throws IOException {
-        this.host = host;
         this.socket = new Socket(getByName(host), port);
         this.outToServer = new DataOutputStream(socket.getOutputStream());
+//        this.inFromServer = new BufferedInputStream(socket.getInputStream());
         this.inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
     }
@@ -32,40 +32,73 @@ public class HTTPClientConnection {
         HTTPResponse response = new HTTPResponse();
         String responseLine;
 
-        if ((responseLine = inFromServer.readLine()).length() != 0) {
-            response.setStatusLine(responseLine);
+        // status line
+        for(;;) {
+            if ((responseLine = inFromServer.readLine()).length() != 0) {
+                response.setStatusLine(responseLine);
+                break;
+            }
         }
 
+        System.out.println(response.getStatusLine());
+
         // headers
-        while (((responseLine = inFromServer.readLine()).length() != 0)) {
+        while ((responseLine = inFromServer.readLine()).length() != 0) {
             response.addHeader(responseLine);
         }
 
-        StringBuilder responseBody = new StringBuilder();
-        while (((responseLine = inFromServer.readLine()).length() != 0)) {
-            responseBody.append(responseLine);
-            responseBody.append("\r\n");
+        // body
+        String transferEncoding = response.getHeader("Transfer-Encoding");
+        if (transferEncoding != null && transferEncoding.equals("chunked")) {
+            int chunkSize;
+            String contentType = response.getHeader("Content-Type");
+            if (contentType != null && contentType.contains("image")) {
+                //TODO
+            }
+
+            else {
+                StringBuilder body = new StringBuilder();
+                while ((chunkSize = parseInt(inFromServer.readLine())) != 0) {
+                    char[] chunk = new char[chunkSize];
+                    inFromServer.read(chunk, 0, chunkSize);
+                    body.append(new String(chunk));
+                    inFromServer.skip(2);
+                }
+            }
         }
 
-        String contentType = response.getHeaders().get("content-type");
-        if (contentType != null && contentType.startsWith("text/html")) {
-            PrintWriter htmlWriter = new PrintWriter("../../out/output.html");
-            htmlWriter.print(response.getMessageBody());
-            htmlWriter.close();
+        else {
+            String contentType = response.getHeader("Content-Type");
+            if (contentType != null && contentType.contains("image")) {
+                //TODO
+            }
+
+            else {
+                int contentLength = response.getContentLength();
+                if (contentLength != -1) {
+                    char[] body = new char[contentLength];
+                    inFromServer.read(body, 0, contentLength);
+                    response.setBody(new String(body));
+                }
+
+                else {
+                    StringBuilder body = new StringBuilder();
+                    while ((responseLine = inFromServer.readLine()).length() != 0) {
+                        body.append(responseLine);
+                    }
+                    response.setBody(body.toString());
+                }
+            }
         }
-        response.setBody(responseBody.toString());
 
         return response;
     }
 
-    public void close() throws IOException {
-        socket.close();
+    public void getEmbeddedImages(HTTPResponse response) {
+        ArrayList<URI> links = response.getImageLinks();
     }
 
-    private void writeToFile(String fileName, String data) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter("out/" + fileName));
-        writer.write(data);
-
-        writer.close();
+    public void close() throws IOException {
+        socket.close();
     }
 }
