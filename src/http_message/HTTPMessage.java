@@ -6,26 +6,25 @@ import java.util.HashMap;
  * This class models an HTTP message.
  */
 public abstract class HTTPMessage {
+
+    static final String CRLF = "\r\n";
+
     private HashMap<String, String> headers = new HashMap<>();
-    private String messageBody;
+    private String messageBody = "";
     final String version = "HTTP/1.1";
 
-    /**
-     *
-     * @param name
-     * @param value
-     */
+
     public void addHeader(String name, String value) {
         headers.put(name, value);
     }
 
     public void addHeader(String header) {
         String args[] = header.split(": ");
-        headers.put(args[0].toLowerCase(), args[1].toLowerCase());
+        headers.put(args[0], args[1]);
     }
 
-    public HashMap<String, String> getHeaders() {
-        return headers;
+    public String getHeader(String key) {
+        return headers.get(key);
     }
 
     /**
@@ -53,12 +52,9 @@ public abstract class HTTPMessage {
     public String getHeaderString() {
         StringBuilder headerString = new StringBuilder();
         for (HashMap.Entry<String, String> header : headers.entrySet()) {
-            headerString.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
+            headerString.append(header.getKey()).append(": ").append(header.getValue()).append(CRLF);
         }
 
         return headerString.toString();
     }
-
-    @Override
-    public abstract String toString();
 }
