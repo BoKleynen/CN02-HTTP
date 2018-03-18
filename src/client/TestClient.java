@@ -3,6 +3,7 @@ package client;
 import http_message.HTTPRequest;
 import http_message.HTTPResponse;
 
+import javax.swing.text.html.HTMLWriter;
 import java.net.URI;
 
 public class TestClient {
@@ -14,5 +15,8 @@ public class TestClient {
         System.out.println(request);
         HTTPResponse response = client.sendRequest(request);
         response.print();
+        if (response.getMessageBody() != null) {
+            HTMLWriter htmlWriter = new HTMLWriter();
+        }
     }
 }

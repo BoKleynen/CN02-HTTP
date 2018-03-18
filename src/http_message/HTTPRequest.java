@@ -1,6 +1,8 @@
 package http_message;
 
 import util.CommandNotFoundException;
+
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -10,23 +12,25 @@ public class HTTPRequest extends HTTPMessage {
     private String method;
     private String path;
 
-    public HTTPRequest(String method, URL url) throws CommandNotFoundException {
+    public HTTPRequest(String method, URI uri) throws CommandNotFoundException {
         setMethod(method);
-        setPath(url.getPath());
-        addHeader("Host", url.getHost());
+        setPath(uri.getPath());
+        addHeader("host", uri.getHost());
     }
 
     @Override
     public String toString() {
-        if (getMessageBody() == null) {
+        if (getMessageBody().equals("")) {
             return method + ' ' + path + ' ' + version + CRLF +
-                    getHeaderString();
+                    getHeaderString()
+                    + CRLF;
         }
         else {
             return method + ' ' + path + ' ' + version + CRLF +
                     getHeaderString() +
                     CRLF +
-                    getMessageBody();
+                    getMessageBody()
+                    + CRLF;
         }
 
     }

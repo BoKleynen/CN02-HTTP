@@ -65,8 +65,11 @@ public class HTTPResponse extends HTTPMessage{
     public void print() {
         System.out.println(getStatusLine());
         System.out.println(getHeaderString());
-        System.out.println();
-        System.out.println(getMessageBody());
+
+        if (getMessageBody() != null) {
+            System.out.println();
+            System.out.println(getMessageBody());
+        }
     }
 
     /**
@@ -75,9 +78,13 @@ public class HTTPResponse extends HTTPMessage{
      */
     public int getContentLength() {
         try {
-            return parseInt(getHeader("Content-Length").split(": ")[1]);
+            return parseInt(getHeader("Content-Length"));
         } catch (NumberFormatException | NullPointerException e) {
             return -1;
         }
+    }
+
+    public void saveToFile() {
+
     }
 }

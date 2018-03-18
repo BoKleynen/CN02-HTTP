@@ -10,7 +10,7 @@ public abstract class HTTPMessage {
     static final String CRLF = "\r\n";
 
     private HashMap<String, String> headers = new HashMap<>();
-    private String messageBody;
+    private String messageBody = "";
     final String version = "HTTP/1.1";
 
 
@@ -20,7 +20,7 @@ public abstract class HTTPMessage {
 
     public void addHeader(String header) {
         String args[] = header.split(": ");
-        headers.put(args[0].toLowerCase(), args[1].toLowerCase());
+        headers.put(args[0], args[1]);
     }
 
     public String getHeader(String key) {

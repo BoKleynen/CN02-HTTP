@@ -3,8 +3,6 @@ package http_message;
 import java.io.InputStream;
 import java.io.IOException;
 
-import static http_message.HTTPMessage.CRLF;
-
 public class BufferedInputStream extends java.io.BufferedInputStream {
 
     /**
@@ -21,11 +19,28 @@ public class BufferedInputStream extends java.io.BufferedInputStream {
      * @throws IOException if the line could not be read
      */
     public String readLine() throws IOException {
-        String output = "";
-        do
-            output += (char) this.read();
-        while(!output.endsWith(CRLF));
+        StringBuilder s = new StringBuilder();
+        char c = 0;
 
-        return output.substring(0, output.length() - 2);
+        if (!skipLF || (c = (char) read()) != '\n')
+            s.append(c);
+        skipLF = false;
+
+        s.append(c);
+        for(;;) {
+            c = (char) read();
+            if (c == '\r') {
+                skipLF = true;
+                break;
+            }
+            else if (c == '\n') {
+                break;
+            }
+            s.append(c);
+        }
+
+        return s.toString();
     }
+
+    private boolean skipLF = false;
 }

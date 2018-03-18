@@ -4,6 +4,7 @@ import http_message.HTTPRequest;
 import http_message.HTTPResponse;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.Scanner;
 
 import static java.lang.Integer.parseInt;
@@ -29,7 +30,8 @@ public class ChatClient {
             try {
                 URI uri = new URI(args[1]);
 
-                HTTPRequest request = new HTTPRequest(args[0], uri.getPath());
+
+                HTTPRequest request = new HTTPRequest(args[0], uri);
 
                 // get headers from user input
                 while((inputLine = inputScanner.nextLine()).length() != 0) {
@@ -53,6 +55,8 @@ public class ChatClient {
 
                 HTTPClientConnection client = new HTTPClientConnection(uri.getHost(), port);
                 HTTPResponse response = client.sendRequest(request);
+                System.out.println(request);
+                System.out.println();
                 response.print();
 
             } catch (Exception e) {
