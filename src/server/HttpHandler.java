@@ -1,13 +1,17 @@
 package server;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -32,7 +36,7 @@ public class HttpHandler {
 			
 			if (type_of_method == 0) {
 				try {
-					serverResponse.writeBytes(httpHeaderConstructor(501,""));
+					serverResponse.writeBytes(httpHeaderConstructor(501,"").toString());
 					serverResponse.close();
 					return;
 				}catch (Exception e) {
@@ -58,7 +62,7 @@ public class HttpHandler {
 			
 		}catch(Exception e) {
 			try {
-				serverResponse.writeBytes(httpHeaderConstructor(500,""));
+				serverResponse.writeBytes(httpHeaderConstructor(500,"").toString());
 				serverResponse.close();
 				return;
 			}catch( Exception err) {
@@ -68,7 +72,7 @@ public class HttpHandler {
 		}
 		
 		System.out.println("Client requested: " + new File(path).getAbsolutePath());
-		sendRequestedFile(path, serverResponse);
+		checkRequestedFile(path, serverResponse);
 		
 		String next_line;
 		Boolean host_header = false;
@@ -77,6 +81,16 @@ public class HttpHandler {
 				host_header = true;
 			}
 			else if (next_line.startsWith("If-Modified-Since")) {
+				if (type_of_method != 2) {
+					try {
+						serverResponse.writeBytes(httpHeaderConstructor(400,"").toString());
+						serverResponse.close();
+						return;
+					}catch( Exception e) {
+						System.out.println("Error" + e.getMessage());
+				    }
+				}
+				else {
 				Date inputDate = new Date();
 				for (int a = 0; a < next_line.length(); a++){
 					if (next_line.charAt(a)==':'){
@@ -94,28 +108,19 @@ public class HttpHandler {
 				
 				if (inputDate.compareTo(lastModifiedDate) > 0) {
 					try {
-						serverResponse.writeBytes(httpHeaderConstructor(304,""));
+						serverResponse.writeBytes(httpHeaderConstructor(304,"").toString());
 						serverResponse.close();
 						return;
 					}catch( Exception e) {
 						System.out.println("Error" + e.getMessage());
-				}
-			}
-			else {
-				try {
-					serverResponse.writeBytes(httpHeaderConstructor(501,""));
-					serverResponse.close();
-					return;
-				}catch( Exception e) {
-					System.out.println("Error" + e.getMessage());
-				}
-				
-			}
+				    }
+			   }
+			   }
 		}
 	}
 		if (!host_header) {
 			try {
-				serverResponse.writeBytes(httpHeaderConstructor(400,""));
+				serverResponse.writeBytes(httpHeaderConstructor(400,"").toString());
 				serverResponse.close();
 				return;
 			}catch( Exception err) {
@@ -125,17 +130,16 @@ public class HttpHandler {
 		
 		
 	}
-
-	private static void sendRequestedFile(String filePath, DataOutputStream srvResponse) {
-		FileInputStream requestedFile = null;
+	private static void checkRequestedFile(String filePath, DataOutputStream srvResponse) {;
+		String fileExtension = FilenameUtils.getExtension(filePath);
 		
 		try {
-			requestedFile = new FileInputStream(filePath);
+			new FileInputStream(filePath);
 			System.out.println("File found and opened succesfully");
 		} catch (Exception e) {
 			try {
 				System.out.println("Could not find file!");
-				srvResponse.writeBytes(httpHeaderConstructor(404,""));
+				srvResponse.writeBytes(httpHeaderConstructor(404,fileExtension).toString());
 				srvResponse.close();
 			} catch (Exception err) {
 				System.out.println("Error: Can't send failed response!");
@@ -143,18 +147,11 @@ public class HttpHandler {
 			}
 		}
 		
-		String fileExtension = FilenameUtils.getExtension(filePath);
-        try {
-        	srvResponse.writeBytes(httpHeaderConstructor(200, fileExtension));
-        	srvResponse.close();
-        	requestedFile.close();
-        }catch (Exception e) {
-        	System.out.println("Error message: "+ e.getMessage());
-        }	
+		return;
 		
 	}
 	
-	private static String httpHeaderConstructor(int returnCode, String typeOfFile) {
+	private static StringBuilder httpHeaderConstructor(int returnCode, String typeOfFile) {
 		StringBuilder sb = new StringBuilder ("HTTP/1.1 ");
 		
 		switch (returnCode) {
@@ -194,8 +191,48 @@ public class HttpHandler {
 		SimpleDateFormat dateTemplate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 		sb.append("Date: " + dateTemplate.format(date));
 		
-		sb.append("\r\n");
-		return sb.toString();
-
+		
+		
+		return sb;	
+	}
+	
+	private static StringBuilder CommandHandler(StringBuilder header, int typeOfMethod, String filePath) throws IOException {
+		switch(typeOfMethod) {
+		case 1:
+			return header;
+		case 2:
+			header.append("\r\n");
+			String fileExtension = FilenameUtils.getExtension(filePath);
+			if(fileExtension.equals("html")) {
+				BufferedReader html_file = new BufferedReader(new FileReader(filePath));
+				String str;
+				while ((str = html_file.readLine()) != null) {
+	            header.append(str);
+	            }
+				html_file.close();
+				return header;				
+			}
+			else {
+				BufferedImage bufferedImage = ImageIO.read(new File(filePath));		
+				byteImage = Byte	ArrayConversion.toByteArray(bufferedImage);	
+	 
+				System.out.println(byteImage.toString());
+				return header;
+				// TODO
+			}
+		case 3:
+			File newFile = new File(putpost.txt);
+			boolean createdFile = newFile.createNewFile();
+			if (!createdFile) {
+				newFile.delete();
+				newFile.createNewFile();
+			}
+			
+	
+	      
+			
+			
+		}
+		
 	}
 }

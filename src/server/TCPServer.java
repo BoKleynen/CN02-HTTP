@@ -4,11 +4,10 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class TCPServer {
+public class TCPserver {
 	public static final int PORT = 4444;
-
 	public static void main(String[] args) throws IOException {
-		new TCPServer().runServer();
+		new TCPserver().runServer();
 	}
 	
 	public void runServer() throws IOException {
