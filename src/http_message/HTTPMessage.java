@@ -7,7 +7,7 @@ import java.util.HashMap;
  */
 public abstract class HTTPMessage {
 
-    static final String CRLF = "\r\n";
+    public static final String CRLF = "\r\n";
 
     private HashMap<String, String> headers = new HashMap<>();
     private String messageBody = "";

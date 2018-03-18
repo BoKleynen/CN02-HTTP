@@ -12,6 +12,12 @@ public class HTTPRequest extends HTTPMessage {
     private String method;
     private String path;
 
+    public HTTPRequest(String initialLine) throws CommandNotFoundException {
+        String args[] = initialLine.split(" ");
+        setMethod(args[0]);
+        setPath(args[1]);
+    }
+
     public HTTPRequest(String method, URI uri) throws CommandNotFoundException {
         setMethod(method);
         setPath(uri.getPath());
