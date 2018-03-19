@@ -2,11 +2,14 @@
 *.iml
 out/
 \.DS_Store
-lib/jsoup-1.11.2-javadoc.jar
-lib/jsoup-1.11.2-sources.jar
-lib/jsoup-1.11.2.jar
 
 /src/Test.java
+
+testOutput\.html
+
+lib/jsoup-1\.11\.2-javadoc\.jar
+
+*.jar
 
 \.metadata/
 

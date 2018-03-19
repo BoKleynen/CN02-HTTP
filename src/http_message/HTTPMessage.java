@@ -3,7 +3,10 @@ package http_message;
 import java.util.HashMap;
 
 /**
- * This class models an HTTP message.
+ * A class modelling an HTTP message as defined in RFC2616.
+ * This is an abstract class modelling the common attributes of
+ * HTTP requests and messages, for use in programs see the HTTPResponse
+ * and HTTPRequest classes
  */
 public abstract class HTTPMessage {
 
@@ -39,6 +42,10 @@ public abstract class HTTPMessage {
         messageBody += str;
     }
 
+    public boolean hasBody() {
+        return !messageBody.equals("");
+    }
+
     /**
      * @return this.messageBody
      */
@@ -58,6 +65,10 @@ public abstract class HTTPMessage {
         return headerString.toString();
     }
 
+    /**
+     * @return A formatted string of this HTTP message.
+     */
     @Override
     public abstract String toString();
 }
+
