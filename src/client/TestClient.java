@@ -5,6 +5,7 @@ import http_message.HTTPResponse;
 import java.io.File;
 import java.net.URI;
 import java.util.Base64;
+
 import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.apache.commons.io.FileUtils.writeByteArrayToFile;
 
@@ -21,6 +22,7 @@ public class TestClient {
         File file = new File("websites/" + uri.getAuthority() + request.getPath() + "a.html");
         writeStringToFile(file, response.getBody());
 
+        // Gets the embedded objects
         HTTPRequest imgRequest;
         HTTPResponse imgResponse;
         for (URI imgUri : response.getImageLinks()) {

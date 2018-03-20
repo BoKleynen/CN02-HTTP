@@ -2,15 +2,10 @@ package client;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Base64;
-
 import http_message.BufferedInputStream;
 import http_message.HTTPRequest;
 import http_message.HTTPResponse;
-import org.apache.commons.io.FilenameUtils;
 
 import static java.net.InetAddress.getByName;
 import static java.lang.Integer.parseInt;

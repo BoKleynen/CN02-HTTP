@@ -2,11 +2,8 @@ package client;
 
 import http_message.HTTPRequest;
 import http_message.HTTPResponse;
-
 import java.io.File;
 import java.net.URI;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Scanner;
 
