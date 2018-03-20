@@ -2,6 +2,8 @@ package http_message;
 
 import java.util.HashMap;
 
+import static java.lang.Integer.parseInt;
+
 /**
  * A class modelling an HTTP message as defined in RFC2616.
  * This is an abstract class modelling the common attributes of
@@ -13,7 +15,7 @@ public abstract class HTTPMessage {
     public static final String CRLF = "\r\n";
 
     private HashMap<String, String> headers = new HashMap<>();
-    private String messageBody = "";
+    private String body;
     final String version = "HTTP/1.1";
 
 
@@ -35,22 +37,18 @@ public abstract class HTTPMessage {
      * @param body
      */
     public void setBody(String body) {
-        messageBody = body;
-    }
-
-    public void addToBody(String str) {
-        messageBody += str;
+        this.body = body;
     }
 
     public boolean hasBody() {
-        return !messageBody.equals("");
+        return body != null;
     }
 
     /**
-     * @return this.messageBody
+     * @return this.body
      */
-    public String getMessageBody() {
-        return messageBody;
+    public String getBody() {
+        return body;
     }
 
     /**
@@ -63,6 +61,18 @@ public abstract class HTTPMessage {
         }
 
         return headerString.toString();
+    }
+
+    /**
+     * @return  -1 if the Content-Length header is absent or invalid, otherwise
+     *          return the length of the body of this response as contained within the header.
+     */
+    public int getContentLength() {
+        try {
+            return parseInt(getHeader("Content-Length"));
+        } catch (NumberFormatException | NullPointerException e) {
+            return -1;
+        }
     }
 
     /**

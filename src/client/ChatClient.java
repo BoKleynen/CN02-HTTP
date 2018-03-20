@@ -5,6 +5,7 @@ import http_message.HTTPResponse;
 
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import static java.lang.Integer.parseInt;
@@ -40,10 +41,12 @@ public class ChatClient {
 
                 // get body from user input if the specified command is POST or PUT
                 if (request.getMethod().equals("POST") || request.getMethod().equals("PUT")) {
+                    StringBuilder body = new StringBuilder();
                     while((inputLine = inputScanner.nextLine()).length() != 0) {
-                        request.addToBody(inputLine);
-                        request.addToBody("\r\n");
+                        body.append(inputLine);
+                        body.append("\r\n");
                     }
+                    request.setBody(body.toString());
                 }
 
                 int port;
@@ -58,6 +61,14 @@ public class ChatClient {
                 System.out.println(request);
                 System.out.println();
                 response.print();
+
+                if ("close".equals(response.getHeader("Connection")))
+                    keepConnection = false;
+
+                for (URI imageLink : response.getImageLinks()) {
+                    HTTPRequest imRequest = new HTTPRequest("GET", imageLink);
+                    client.sendRequest(imRequest);
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();

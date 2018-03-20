@@ -1,16 +1,14 @@
 package http_message;
 
 import util.CommandNotFoundException;
-
 import java.net.URI;
-import java.net.URL;
 
 /**
  * A class modelling an HTTP request as defined in RFC2616
  */
 public class HTTPRequest extends HTTPMessage {
     private String method;
-    private String path;
+    private final String path;
 
     /**
      *
@@ -25,7 +23,7 @@ public class HTTPRequest extends HTTPMessage {
     public HTTPRequest(String initialLine) throws CommandNotFoundException, ArrayIndexOutOfBoundsException {
         String args[] = initialLine.split(" ");
         setMethod(args[0]);
-        setPath(args[1]);
+        path = "".equals(args[1]) ? "/" : args[1];
     }
 
     /**
@@ -40,9 +38,15 @@ public class HTTPRequest extends HTTPMessage {
      */
     public HTTPRequest(String method, URI uri) throws CommandNotFoundException {
         setMethod(method);
-        setPath(uri.getPath());
-        addHeader("host", uri.getHost());
+        path = "".equals(uri.getPath()) ? "/" : uri.getPath();
+        addHeader("Host", uri.getHost());
     }
+
+//    public HTTPRequest(String method, String path, String host) throws CommandNotFoundException {
+//        setMethod(method);
+//        setPath(path);
+//        addHeader("Host", host);
+//    }
 
     /**
      * @return A formatted string representation of this HTTP request.
@@ -54,7 +58,7 @@ public class HTTPRequest extends HTTPMessage {
                 + CRLF;
         if (hasBody()) {
             return s +
-                    getMessageBody() +
+                    getBody() +
                     CRLF;
         }
         else {
@@ -110,13 +114,13 @@ public class HTTPRequest extends HTTPMessage {
         return path;
     }
 
-    /**
-     * Sets the relative path to the endpoint.
-     * @param path
-     *          Relative path to the requested resource. If an
-     *          empty string is provided, the root is assumed.
-     */
-    private void setPath(String path) {
-        this.path = path.equals("") ? "/" : path;
-    }
+//    /**
+//     * Sets the relative path to the endpoint.
+//     * @param path
+//     *          Relative path to the requested resource. If an
+//     *          empty string is provided, the root is assumed.
+//     */
+//    private void setPath(String path) {
+//        this.path = ("".equals(path)) ? "/" : path;
+//    }
 }
