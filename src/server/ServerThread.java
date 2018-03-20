@@ -137,11 +137,11 @@ public class ServerThread extends Thread {
 
         // CONTENT-LENGTH
         int contentLength;
-        if (serverResponse.getMessageBody().equals("")) {
+        if (serverResponse.getBody().equals("")) {
             contentLength = 0;
         }
         else {
-            contentLength = serverResponse.getMessageBody().length();
+            contentLength = serverResponse.getBody().length();
         }
         serverResponse.addHeader("Content-Length", Integer.toString(contentLength));
 
@@ -186,7 +186,7 @@ public class ServerThread extends Thread {
 
     private void methodPUT(HTTPRequest clientRequest, HTTPResponse serverResponse) throws FileNotFoundException {
         PrintWriter writer = new PrintWriter(s + clientRequest.getPath());
-        writer.print(clientRequest.getMessageBody());
+        writer.print(clientRequest.getBody());
         writer.close();
         serverResponse.setStatusLine("HTTP/1.1 200 OK");
     }
@@ -197,7 +197,7 @@ public class ServerThread extends Thread {
             file.createNewFile();
         }
         FileWriter writer = new FileWriter(file, true);
-        writer.write(clientRequest.getMessageBody());
+        writer.write(clientRequest.getBody());
         writer.flush();
         writer.close();
         serverResponse.setStatusLine("HTTP/1.1 200 OK");
