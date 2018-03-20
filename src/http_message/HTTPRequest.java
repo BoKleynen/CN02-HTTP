@@ -5,12 +5,15 @@ import util.CommandNotFoundException;
 import java.net.URI;
 import java.net.URL;
 
+import org.apache.commons.io.FilenameUtils;
+
 /**
  * This class models a HTTP request.
  */
 public class HTTPRequest extends HTTPMessage {
     private String method;
     private String path;
+    private String extension;
 
     public HTTPRequest(String initialLine) throws CommandNotFoundException {
         String args[] = initialLine.split(" ");
@@ -73,5 +76,25 @@ public class HTTPRequest extends HTTPMessage {
 
     private void setPath(String path) {
         this.path = path.equals("") ? "/" : path;
+        if (this.getPath().equals("/")) {
+        	this.setPath("/");
+        }
+        else {
+        	String fileExtension = FilenameUtils.getExtension(this.getPath());
+        	this.setExtenstion(fileExtension);
+        }
+    }
+    
+    public String getPath() {
+    	return this.path;
+    }
+    
+    private void setExtenstion(String extension) {
+    	this.extension = extension.equals("") ? "/" : path;
+    }
+    
+    public String getExtension() {
+    	return this.extension;
+    	
     }
 }

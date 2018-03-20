@@ -4,6 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -69,18 +70,6 @@ public class HTTPResponse extends HTTPMessage{
         if (getMessageBody() != null) {
             System.out.println();
             System.out.println(getMessageBody());
-        }
-    }
-
-    /**
-     * @return  -1 if the Content-Length header is absent or invalid, otherwise
-     *          return the length of the body of this response as contained within the header.
-     */
-    public int getContentLength() {
-        try {
-            return parseInt(getHeader("Content-Length"));
-        } catch (NumberFormatException | NullPointerException e) {
-            return -1;
         }
     }
 

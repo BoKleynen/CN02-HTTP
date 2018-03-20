@@ -2,6 +2,8 @@ package http_message;
 
 import java.util.HashMap;
 
+import static java.lang.Integer.parseInt;
+
 /**
  * This class models an HTTP message.
  */
@@ -56,6 +58,18 @@ public abstract class HTTPMessage {
         }
 
         return headerString.toString();
+    }
+
+    /**
+     * @return  -1 if the Content-Length header is absent or invalid, otherwise
+     *          return the length of the body of this response as contained within the header.
+     */
+    public int getContentLength() {
+        try {
+            return parseInt(getHeader("Content-Length"));
+        } catch (NumberFormatException | NullPointerException e) {
+            return -1;
+        }
     }
 
     @Override
