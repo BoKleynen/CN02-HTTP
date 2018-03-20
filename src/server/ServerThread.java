@@ -31,7 +31,6 @@ public class ServerThread extends Thread {
 	public void run() {
 		Boolean open = true;
 		while (open) {
-		    System.out.println("out");
 		    try{
                 HTTPRequest request = getRequest();
                 System.out.println(request.toString());
@@ -51,13 +50,12 @@ public class ServerThread extends Thread {
 		            response.setStatusLine("HTTP/1.1 500 Server Error");
                 }
                 try {
-		            response.setBody("");
                     outToClient.writeBytes(response.toString());
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
             }
-            open = false;
+            open = false; // TODO wegdoen!
 		}
 	}
 
