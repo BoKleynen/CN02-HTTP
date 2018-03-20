@@ -45,7 +45,7 @@ public class HTTPResponse extends HTTPMessage{
         StringBuilder stringBuilder = new StringBuilder();
         for (String str : copyOfRange(args, 2, args.length)) {
             stringBuilder.append(str);
-            stringBuilder.append(" ");
+            stringBuilder.append(' ');
         }
         reasonPhrase = stringBuilder.toString();
     }
@@ -98,7 +98,7 @@ public class HTTPResponse extends HTTPMessage{
      * @return  A string representation of this response.
      */
     public String toString() {
-        String s = version + responseCode + reasonPhrase + CRLF +
+        String s = version + ' ' + responseCode + ' ' + reasonPhrase + CRLF +
                 getHeaderString() + CRLF;
         if (hasBody())  {
             return s + getBody() + CRLF;
