@@ -86,7 +86,7 @@ public class HTTPResponse extends HTTPMessage{
     }
 
     public String toString() {
-        String s = version + responseCode + reasonPhrase + CRLF +
+        String s = version + " " + responseCode + " " + reasonPhrase + CRLF +
                 getHeaderString() + CRLF;
         if (hasBody())  {
             return s + getMessageBody() + CRLF;

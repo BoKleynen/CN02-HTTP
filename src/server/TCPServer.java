@@ -17,7 +17,7 @@ public class TCPServer {
 			Socket socket = serverSocket.accept();
 			System.out.println(socket);
 			System.out.println("accepted");
-//			new ServerThread(socket).start();
+			new ServerThread(socket).start();
 		}
 	}
 

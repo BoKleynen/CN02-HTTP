@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import http_message.HTTPRequest;
 import http_message.HTTPResponse;
@@ -19,7 +20,7 @@ public class ServerThread extends Thread {
 	private BufferedReader inputFromClient;
 	private DataOutputStream outToClient;
     private Path currentRelativePath = Paths.get("");
-    private String s = currentRelativePath.toAbsolutePath().toString() + "/files";
+    private String s = currentRelativePath.toAbsolutePath().toString() + "\\files";
 
 	ServerThread(Socket socket) throws IOException {
 		this.socket = socket;
@@ -30,9 +31,12 @@ public class ServerThread extends Thread {
 	public void run() {
 		Boolean open = true;
 		while (open) {
+		    System.out.println("out");
 		    try{
                 HTTPRequest request = getRequest();
+                System.out.println(request.toString());
                 HTTPResponse response = getResponse(request);
+                System.out.println(response.toString());
                 outToClient.writeBytes(response.toString());
                 if ("close".equals(request.getHeader("Connection"))){
     				open = false;
@@ -41,17 +45,19 @@ public class ServerThread extends Thread {
             }catch (Exception e){
                 HTTPResponse response = new HTTPResponse();
 		        if (e instanceof BadRequestException){
-                    response.setStatusLine("HTTP\1.1 400 Bad Request");
+                    response.setStatusLine("HTTP/1.1 400 Bad Request");
                 }
                 else {
-		            response.setStatusLine("HTTP\1.1 500 Server Error");
+		            response.setStatusLine("HTTP/1.1 500 Server Error");
                 }
                 try {
+		            response.setBody("");
                     outToClient.writeBytes(response.toString());
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
             }
+            open = false;
 		}
 	}
 
@@ -103,10 +109,11 @@ public class ServerThread extends Thread {
         // DATE HEADER
         Date date= new Date();
         SimpleDateFormat dateTemplate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+        dateTemplate.setTimeZone(TimeZone.getTimeZone("GMT"));
         serverResponse.addHeader("Date", dateTemplate.format(date));
 
         // CONTENT-TYPE HEADER
-        if (clientRequest.getExtension().equals("") || clientRequest.getExtension().equals("html")) {
+        if (clientRequest.getExtension().equals("") || clientRequest.getExtension().endsWith(".html")) {
             serverResponse.addHeader("Content-Type", "text/html");
         }
         else {
@@ -116,7 +123,7 @@ public class ServerThread extends Thread {
         // METHODS
         switch (clientRequest.getMethod()) {
             case "HEAD":
-                serverResponse.setStatusLine("HTTP\1.1 200 OK");
+                serverResponse.setStatusLine("HTTP/1.1 200 OK");
                 break;
             case "GET":
                 methodGET(clientRequest, serverResponse);
@@ -146,7 +153,7 @@ public class ServerThread extends Thread {
         File file = new File(s+ clientRequest.getPath());
         //Check if file exists
         if (!file.exists()) {
-            serverResponse.setStatusLine("HTTP\1.1 404 Not Found");
+            serverResponse.setStatusLine("HTTP/1.1 404 Not Found");
             return;
         }
         //If-Modified-since
@@ -162,26 +169,27 @@ public class ServerThread extends Thread {
             Date lastModifiedDate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").parse(temp);
 
             if (ifModifiedDate.compareTo(lastModifiedDate) > 0) {
-                serverResponse.setStatusLine("HTTP\1.1 304 Not Modified");
+                serverResponse.setStatusLine("HTTP/1.1 304 Not Modified");
                 return;
             }
         }
 
         try {
 			BufferedReader fileToGet = new BufferedReader(new FileReader(s + clientRequest.getPath()));
-	        serverResponse.setStatusLine("HTTP\1.1 200 OK");
-	        serverResponse.setBody(fileToGet.toString());
+	        serverResponse.setStatusLine("HTTP/1.1 200 OK");
+            String message = org.apache.commons.io.IOUtils.toString(fileToGet);
+	        serverResponse.setBody(message);
 	        fileToGet.close();
 		} catch (FileNotFoundException e) {
-			serverResponse.setStatusLine("HTTP\1.1 404 Not Found");
-		} 
+			serverResponse.setStatusLine("HTTP/1.1 404 Not Found");
+		}
     }
 
     private void methodPUT(HTTPRequest clientRequest, HTTPResponse serverResponse) throws FileNotFoundException {
         PrintWriter writer = new PrintWriter(s + clientRequest.getPath());
         writer.print(clientRequest.getMessageBody());
         writer.close();
-        serverResponse.setStatusLine("HTTP\1.1 200 OK");
+        serverResponse.setStatusLine("HTTP/1.1 200 OK");
     }
 
     private void methodPOST(HTTPRequest clientRequest, HTTPResponse serverResponse) throws IOException {
@@ -193,7 +201,7 @@ public class ServerThread extends Thread {
         writer.write(clientRequest.getMessageBody());
         writer.flush();
         writer.close();
-        serverResponse.setStatusLine("HTTP\1.1 200 OK");
+        serverResponse.setStatusLine("HTTP/1.1 200 OK");
     }
 
 }

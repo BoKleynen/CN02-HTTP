@@ -130,10 +130,6 @@ public class HTTPRequest extends HTTPMessage {
         }
     }
     
-    public String getPath() {
-    	return this.path;
-    }
-    
     private void setExtenstion(String extension) {
     	this.extension = extension.equals("") ? "/" : path;
     }
