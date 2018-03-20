@@ -111,11 +111,12 @@ public class ServerThread extends Thread {
         serverResponse.addHeader("Date", dateTemplate.format(date));
 
         // CONTENT-TYPE HEADER
-        if (clientRequest.getExtension().equals("") || clientRequest.getExtension().endsWith(".html")) {
+        String path =clientRequest.getPath();
+        if (path.equals("") || path.endsWith(".html") || path.endsWith(".txt")) {
             serverResponse.addHeader("Content-Type", "text/html");
         }
         else {
-            serverResponse.addHeader("Content-Type", "image/" + clientRequest.getExtension());
+            serverResponse.addHeader("Content-Type", "image/" + clientRequest.getPath());
         }
 
         // METHODS

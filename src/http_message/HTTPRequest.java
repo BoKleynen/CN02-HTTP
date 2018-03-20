@@ -121,21 +121,5 @@ public class HTTPRequest extends HTTPMessage {
      */
     private void setPath(String path) {
         this.path = path.equals("") ? "/" : path;
-        if (this.getPath().equals("/")) {
-        	this.setPath("/");
-        }
-        else {
-        	String fileExtension = FilenameUtils.getExtension(this.getPath());
-        	this.setExtenstion(fileExtension);
-        }
-    }
-    
-    private void setExtenstion(String extension) {
-    	this.extension = extension.equals("") ? "/" : path;
-    }
-    
-    public String getExtension() {
-    	return this.extension;
-    	
     }
 }
