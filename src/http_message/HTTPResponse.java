@@ -13,12 +13,22 @@ import static java.lang.Integer.parseInt;
 import static java.util.Arrays.copyOfRange;
 
 
+/**
+ * A class modelling HTTP responses as defined in RFC2616.
+ */
 public class HTTPResponse extends HTTPMessage{
 
     private String version;
     private int responseCode;
     private String reasonPhrase;
 
+    /**
+     * Parses the given string as a HTTP response status line and sets corresponding
+     * fields of this HTTPResponse to the parsed values.
+     *
+     * @param statusLine    String representation of a HTTP response's
+     *                      status line (as defined in RFC2616).
+     */
     public void setStatusLine(String statusLine) {
         String args[] = statusLine.split(" ");
         version = args[0];
@@ -47,6 +57,10 @@ public class HTTPResponse extends HTTPMessage{
         return responseCode;
     }
 
+    /**
+     * @return  Returns a list of links to objects embedded in the
+     *          the body of this response.
+     */
     public ArrayList<URI> getImageLinks() {
         ArrayList<URI> linkList = new ArrayList<>();
         Document document = Jsoup.parse(getMessageBody());
@@ -63,24 +77,22 @@ public class HTTPResponse extends HTTPMessage{
         return linkList;
     }
 
+    /**
+     * Prints a formatted representation (as defined in RFC2616) to the
+     * standard system output.
+     */
     public void print() {
-        System.out.println(getStatusLine());
-        System.out.println(getHeaderString());
-
-        if (getMessageBody() != null) {
-            System.out.println();
-            System.out.println(getMessageBody());
-        }
+        System.out.println(this);
     }
 
     public String toString() {
         String s = version + responseCode + reasonPhrase + CRLF +
                 getHeaderString() + CRLF;
-        if (getMessageBody() == null)  {
-            return s;
+        if (hasBody())  {
+            return s + getMessageBody() + CRLF;
         }
         else {
-            return s + getMessageBody() + CRLF;
+            return s;
         }
     }
 }

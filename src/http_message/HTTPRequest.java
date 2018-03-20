@@ -8,43 +8,72 @@ import java.net.URL;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * This class models a HTTP request.
+ * A class modelling an HTTP request as defined in RFC2616
  */
 public class HTTPRequest extends HTTPMessage {
     private String method;
     private String path;
     private String extension;
 
-    public HTTPRequest(String initialLine) throws CommandNotFoundException {
+    /**
+     *
+     * @param initialLine
+     * @throws CommandNotFoundException
+     *          If the given command is not a valid HTTP command
+     *          or it is not supported. At the moment only GET, HEAD
+     *          PUT and POST are supported.
+     * @throws ArrayIndexOutOfBoundsException
+     *          If the given string does not meet the expected formatting.
+     */
+    public HTTPRequest(String initialLine) throws CommandNotFoundException, ArrayIndexOutOfBoundsException {
         String args[] = initialLine.split(" ");
         setMethod(args[0]);
         setPath(args[1]);
     }
 
+    /**
+     *
+     * @param method
+     *          Supported methods are GET, HEAD, PUT and POST
+     * @param uri
+     *          The endpoint URI for this request.
+     * @throws CommandNotFoundException
+     *          If the given command is not a valid HTTP command
+     *          or it is not supported.
+     */
     public HTTPRequest(String method, URI uri) throws CommandNotFoundException {
         setMethod(method);
         setPath(uri.getPath());
         addHeader("host", uri.getHost());
     }
 
+    /**
+     * @return A formatted string representation of this HTTP request.
+     */
     @Override
     public String toString() {
-        if (getMessageBody().equals("")) {
-            return method + ' ' + path + ' ' + version + CRLF +
-                    getHeaderString()
-                    + CRLF;
+        String s = method + ' ' + path + ' ' + version + CRLF +
+                getHeaderString()
+                + CRLF;
+        if (hasBody()) {
+            return s +
+                    getMessageBody() +
+                    CRLF;
         }
         else {
-            return method + ' ' + path + ' ' + version + CRLF +
-                    getHeaderString() +
-                    CRLF +
-                    getMessageBody()
-                    + CRLF;
+            return s;
         }
-
     }
 
-    public void setMethod(String method) throws CommandNotFoundException {
+    /**
+     * Sets the method for this HTTP request
+     * @param method
+     *          Supported methods are GET, HEAD, PUT and POST
+     * @throws CommandNotFoundException
+     *          If the given method is not a valid HTTP method or
+     *          it is not supported.
+     */
+    private void setMethod(String method) throws CommandNotFoundException {
         method = method.toUpperCase();
 
         switch (method) {
@@ -70,10 +99,26 @@ public class HTTPRequest extends HTTPMessage {
         }
     }
 
+    /**
+     * @return  The method of this HTTP request.
+     */
     public String getMethod() {
         return this.method;
     }
 
+    /**
+     * @return  The relative path to the requested resource.
+     */
+    public String getPath() {
+        return path;
+    }
+
+    /**
+     * Sets the relative path to the endpoint.
+     * @param path
+     *          Relative path to the requested resource. If an
+     *          empty string is provided, the root is assumed.
+     */
     private void setPath(String path) {
         this.path = path.equals("") ? "/" : path;
         if (this.getPath().equals("/")) {
