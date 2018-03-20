@@ -21,6 +21,7 @@ import static http_message.HTTPMessage.CRLF;
  * This class models and HTTP connection between the use of this
  * class and a remote host.
  */
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class HTTPClientConnection {
 
     private Socket socket;
@@ -68,11 +69,7 @@ public class HTTPClientConnection {
                 int chunkSize;
                 String contentType = response.getHeader("Content-Type");
                 if (contentType != null && contentType.contains("image")) {
-                    BufferedInputStream imageStream = new BufferedInputStream(socket.getInputStream());
-                    String extension = FilenameUtils.getExtension(request.getPath());
-                    ArrayList<Byte> body = new ArrayList<>();
-                     // Todo
-
+                    response.setBody(readChunkedImageBody());
                 }
 
                 else {
@@ -86,7 +83,6 @@ public class HTTPClientConnection {
                     int contentLength = response.getContentLength();
                     if (contentLength != -1) {
                         String imgString = readImageBody(contentLength);
-//                        Files.write(Paths.get("testOutput.gif"), Base64.getDecoder().decode(imgString));
                         response.setBody(imgString);
 
                     }
@@ -146,6 +142,17 @@ public class HTTPClientConnection {
 
         return Base64.getEncoder().encodeToString(body);
 
+    }
+
+    private String readChunkedImageBody() throws IOException {
+        int chunkSize;
+        StringBuilder body = new StringBuilder();
+        while ((chunkSize = parseInt(inFromServer.readLine())) != 0) {
+            byte[] chunk = new byte[chunkSize];
+            body.append(Base64.getEncoder().encodeToString(chunk));
+        }
+
+        return body.toString();
     }
 
     private String readChunkedBody() throws IOException {

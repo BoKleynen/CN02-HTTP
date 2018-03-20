@@ -8,9 +8,10 @@ import java.util.Base64;
 import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.apache.commons.io.FileUtils.writeByteArrayToFile;
 
+@SuppressWarnings("all")
 public class TestClient {
     public static void main(String[] args) throws Exception {
-        URI uri = new URI("http://httpbin.org/");
+        URI uri = new URI("//www.tcpipguide.com");
 
         HTTPClientConnection client = new HTTPClientConnection(uri.getHost(), 80);
         HTTPRequest request = new HTTPRequest("GET", uri);
@@ -28,8 +29,10 @@ public class TestClient {
                 System.out.println(imgRequest);
                 imgResponse = client.sendRequest(imgRequest);
                 imgResponse.print();
-                file = new File("websites/" + uri.getAuthority() + imgRequest.getPath());
-                writeByteArrayToFile(file, Base64.getDecoder().decode(imgResponse.getBody()));
+                if (imgResponse.success()) {
+                    file = new File("websites/" + uri.getAuthority() + imgRequest.getPath());
+                    writeByteArrayToFile(file, Base64.getDecoder().decode(imgResponse.getBody()));
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

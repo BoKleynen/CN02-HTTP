@@ -107,4 +107,8 @@ public class HTTPResponse extends HTTPMessage{
             return s;
         }
     }
+
+    public boolean success() {
+        return responseCode == 200 || (responseCode >= 200 && responseCode < 300);
+    }
 }

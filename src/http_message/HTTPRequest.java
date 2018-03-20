@@ -42,12 +42,6 @@ public class HTTPRequest extends HTTPMessage {
         addHeader("Host", uri.getHost());
     }
 
-//    public HTTPRequest(String method, String path, String host) throws CommandNotFoundException {
-//        setMethod(method);
-//        setPath(path);
-//        addHeader("Host", host);
-//    }
-
     /**
      * @return A formatted string representation of this HTTP request.
      */
@@ -113,14 +107,4 @@ public class HTTPRequest extends HTTPMessage {
     public String getPath() {
         return path;
     }
-
-//    /**
-//     * Sets the relative path to the endpoint.
-//     * @param path
-//     *          Relative path to the requested resource. If an
-//     *          empty string is provided, the root is assumed.
-//     */
-//    private void setPath(String path) {
-//        this.path = ("".equals(path)) ? "/" : path;
-//    }
 }
