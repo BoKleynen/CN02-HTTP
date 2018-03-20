@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import http_message.HTTPRequest;
@@ -106,7 +107,7 @@ public class ServerThread extends Thread {
 
         // DATE HEADER
         Date date= new Date();
-        SimpleDateFormat dateTemplate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+        SimpleDateFormat dateTemplate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz" , Locale.ENGLISH);
         dateTemplate.setTimeZone(TimeZone.getTimeZone("GMT"));
         serverResponse.addHeader("Date", dateTemplate.format(date));
 
