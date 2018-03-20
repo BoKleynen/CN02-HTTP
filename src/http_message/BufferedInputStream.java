@@ -19,28 +19,11 @@ public class BufferedInputStream extends java.io.BufferedInputStream {
      * @throws IOException if the line could not be read
      */
     public String readLine() throws IOException {
-        StringBuilder s = new StringBuilder();
-        char c = 0;
+        String output = "";
+        do
+            output += (char) this.read();
+        while(!output.endsWith(HTTPMessage.CRLF));
 
-        if (!skipLF || (c = (char) read()) != '\n')
-            s.append(c);
-        skipLF = false;
-
-        s.append(c);
-        for(;;) {
-            c = (char) read();
-            if (c == '\r') {
-                skipLF = true;
-                break;
-            }
-            else if (c == '\n') {
-                break;
-            }
-            s.append(c);
-        }
-
-        return s.toString();
+        return output.substring(0, output.length() - 2);
     }
-
-    private boolean skipLF = false;
 }

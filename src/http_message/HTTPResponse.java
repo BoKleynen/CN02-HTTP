@@ -21,6 +21,16 @@ public class HTTPResponse extends HTTPMessage{
     private String version;
     private int responseCode;
     private String reasonPhrase;
+    private String host;
+
+    public HTTPResponse() {
+        super();
+    }
+
+    public HTTPResponse(String host) {
+        super();
+        this.host = host;
+    }
 
     /**
      * Parses the given string as a HTTP response status line and sets corresponding
@@ -36,7 +46,7 @@ public class HTTPResponse extends HTTPMessage{
         StringBuilder stringBuilder = new StringBuilder();
         for (String str : copyOfRange(args, 2, args.length)) {
             stringBuilder.append(str);
-            stringBuilder.append(" ");
+            stringBuilder.append(' ');
         }
         reasonPhrase = stringBuilder.toString();
     }
@@ -63,12 +73,12 @@ public class HTTPResponse extends HTTPMessage{
      */
     public ArrayList<URI> getImageLinks() {
         ArrayList<URI> linkList = new ArrayList<>();
-        Document document = Jsoup.parse(getMessageBody());
+        Document document = Jsoup.parse(getBody());
         Elements images = document.getElementsByTag("img");
         for (Element image : images) {
             String link = image.attr("src");
             try {
-                linkList.add(new URI(link));
+                linkList.add(new URI("http", "//" + host + "/" + link, null));
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
@@ -85,14 +95,21 @@ public class HTTPResponse extends HTTPMessage{
         System.out.println(this);
     }
 
+    /**
+     * @return  A string representation of this response.
+     */
     public String toString() {
         String s = version + " " + responseCode + " " + reasonPhrase + CRLF +
                 getHeaderString() + CRLF;
         if (hasBody())  {
-            return s + getMessageBody() + CRLF;
+            return s + getBody() + CRLF;
         }
         else {
             return s;
         }
+    }
+
+    public boolean success() {
+        return responseCode == 200 || (responseCode >= 200 && responseCode < 300);
     }
 }

@@ -15,7 +15,7 @@ public abstract class HTTPMessage {
     public static final String CRLF = "\r\n";
 
     private HashMap<String, String> headers = new HashMap<>();
-    private String messageBody = "";
+    private String body;
     final String version = "HTTP/1.1";
 
 
@@ -37,22 +37,18 @@ public abstract class HTTPMessage {
      * @param body
      */
     public void setBody(String body) {
-        messageBody = body;
-    }
-
-    public void addToBody(String str) {
-        messageBody += str;
+        this.body = body;
     }
 
     public boolean hasBody() {
-        return !messageBody.equals("");
+        return body != null;
     }
 
     /**
-     * @return this.messageBody
+     * @return this.body
      */
-    public String getMessageBody() {
-        return messageBody;
+    public String getBody() {
+        return body;
     }
 
     /**
