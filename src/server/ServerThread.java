@@ -55,7 +55,7 @@ public class ServerThread extends Thread {
                     e1.printStackTrace();
                 }
             }
-            open = false; // TODO wegdoen!
+//            open = false; // TODO wegdoen!
 		}
 	}
 
@@ -136,11 +136,11 @@ public class ServerThread extends Thread {
 
         // CONTENT-LENGTH
         int contentLength;
-        if (clientRequest.getMessageBody().equals("")) {
+        if (serverResponse.getMessageBody().equals("")) {
             contentLength = 0;
         }
         else {
-            contentLength = clientRequest.getMessageBody().length();
+            contentLength = serverResponse.getMessageBody().length();
         }
         serverResponse.addHeader("Content-Length", Integer.toString(contentLength));
 
