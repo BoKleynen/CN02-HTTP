@@ -29,6 +29,12 @@ public class ServerThread extends Thread {
 	private BufferedReader inFromClient;
 	private DataOutputStream outToClient;
 
+    /**
+     * Initializes this server thread
+     * @param socket
+     *          the client socket this server thread will serve.
+     * @throws IOException
+     */
 	ServerThread(Socket socket) throws IOException {
 	    // Set up streams
 		this.socket = socket;
@@ -36,6 +42,9 @@ public class ServerThread extends Thread {
 		outToClient = new DataOutputStream(socket.getOutputStream());
 	}
 
+    /**
+     * Processes user requests.
+     */
 	@Override
 	public void run() {
 		Boolean open = true;
@@ -190,6 +199,13 @@ public class ServerThread extends Thread {
         return null;
     }
 
+    /**
+     *
+     * @param request
+     *          The request beine processed.
+     * @return
+     *          A file object representing the resource specified in the request.
+     */
     private File getResource(HTTPRequest request) {
         File file;
         if (request.getPath().equals("/") || request.getPath().equals("")) {
@@ -203,6 +219,14 @@ public class ServerThread extends Thread {
         return file;
     }
 
+    /**
+     * Prepares a response to a HEAD request
+     * @param request
+     *          The HEAD request to respond to
+     * @return
+     *          A response object that contains the status code and headers to respond
+     *          to the given request.
+     */
     private HTTPResponse getHeadResponse(HTTPRequest request) {
         File resource = getResource(request);
         HTTPResponse response = new HTTPResponse();
@@ -223,6 +247,18 @@ public class ServerThread extends Thread {
         return response;
     }
 
+    /**
+     *
+     * @param request
+     *          The GET request to respond to.
+     * @return
+     *          A response object with a status code and headers along with the
+     *          requested resource if it exists, else and error 404 response object
+     *          is returned.
+     * @throws ParseException
+     *
+     * @throws IOException
+     */
     private HTTPResponse getGetResponse(HTTPRequest request) throws ParseException, IOException {
 	    File resource = getResource(request);
         HTTPResponse response = new HTTPResponse();
@@ -314,12 +350,25 @@ public class ServerThread extends Thread {
         return response;
     }
 
+    /**
+     * Adds commonly used headers like: author and date to the
+     * given response object.
+     * @param response
+     *          The response object to which the common headers have to be added.
+     */
     private void addCommonHeaders(HTTPResponse response) {
         response.addHeader("Authors: Bo Kleynen, Maarten Boogaerts");
         Date date = new Date();
         response.addHeader("Date", date.toString());
     }
 
+    /**
+     * Returns the content type of the specified resource as a mime type.
+     * @param file
+     *          The resource for which the mime type has to be known.
+     * @return
+     *          mime type of the given resource.
+     */
     private String getContentType(File file) {
         String extension = getExtension(file.toString());
 
@@ -333,6 +382,10 @@ public class ServerThread extends Thread {
         }
     }
 
+    /**
+     * sends a 400 bad request message to the bound socket.
+     * @throws IOException
+     */
     private void send400() throws IOException {
         HTTPResponse response = new HTTPResponse();
         response.setStatusLine("HTTP/1.1 400 Not Found");
@@ -351,6 +404,12 @@ public class ServerThread extends Thread {
         outToClient.writeBytes(response.toString());
     }
 
+    /**
+     * returns an error 404 not found response object.
+     * @return
+     *      A response object with a 404 error message and accompanying headers.
+     * @throws IOException
+     */
     private HTTPResponse error404() throws IOException {
         HTTPResponse response = new HTTPResponse();
         response.setStatusLine("HTTP/1.1 404 Not Found");
@@ -370,6 +429,10 @@ public class ServerThread extends Thread {
         return response;
     }
 
+    /**
+     * sends a 500 internal server error to the bound socket.
+     * @throws IOException
+     */
     private void send500() throws IOException {
         HTTPResponse response = new HTTPResponse();
         response.setStatusLine("HTTP/1.1 500 Not Found");
