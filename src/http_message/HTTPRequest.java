@@ -22,6 +22,7 @@ public class HTTPRequest extends HTTPMessage {
      * @throws ArrayIndexOutOfBoundsException
      *          If the given string does not meet the expected formatting.
      */
+
     public HTTPRequest(String initialLine) throws CommandNotFoundException, ArrayIndexOutOfBoundsException {
         String args[] = initialLine.split(" ");
         setMethod(args[0]);
@@ -107,6 +108,6 @@ public class HTTPRequest extends HTTPMessage {
      * @return  The relative path to the requested resource.
      */
     public String getPath() {
-        return path;
+        return path.substring(1);
     }
 }
