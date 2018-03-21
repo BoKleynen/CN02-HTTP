@@ -121,8 +121,10 @@ public class ServerThread extends Thread {
 
 		//Method
 		for (;;) {
-			if ((requestLine = inFromClient.readLine()) != null) {
+            requestLine = inFromClient.readLine();
+			if (requestLine != null && requestLine.length() != 0) {
 			    String[] args = requestLine.split(" ");
+			    System.out.println("req: " + requestLine);
 			    URI uri = new URI(args[1]);
 			    request = new HTTPRequest(args[0], uri);
 				break;

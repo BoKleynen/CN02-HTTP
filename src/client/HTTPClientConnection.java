@@ -41,13 +41,15 @@ public class HTTPClientConnection {
      */
     public HTTPResponse sendRequest(HTTPRequest request) throws IOException {
         outToServer.writeBytes(request.toString());
+        outToServer.flush();
 
         HTTPResponse response = new HTTPResponse(request.getHeader("Host"));
         String responseLine;
 
         // status line
         for(;;) {
-            if ((responseLine = inFromServer.readLine()) != null) {
+            responseLine = inFromServer.readLine();
+            if (responseLine != null && responseLine.length() != 0) {
                 response.setStatusLine(responseLine);
                 break;
             }

@@ -42,7 +42,7 @@ public class HTTPRequest extends HTTPMessage {
     public HTTPRequest(String method, URI uri) throws CommandNotFoundException {
         setMethod(method);
         path = "".equals(uri.getPath()) ? "/" : uri.getPath();
-        addHeader("Host", uri.getHost());
+        addHeader("Host", uri.getHost() + (uri.getPort() == -1 ? "" : (":" + Integer.toString(uri.getPort()))));
     }
 
     /**
