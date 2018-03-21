@@ -22,6 +22,4 @@ src/\.project
 
 \.metadata/
 
-src/\.classpath
-
-src/\.project
+*.class
