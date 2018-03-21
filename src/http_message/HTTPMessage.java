@@ -15,7 +15,7 @@ public abstract class HTTPMessage {
     public static final String CRLF = "\r\n";
 
     private HashMap<String, String> headers = new HashMap<>();
-    private String body;
+    private String body = "";
     final String version = "HTTP/1.1";
 
 

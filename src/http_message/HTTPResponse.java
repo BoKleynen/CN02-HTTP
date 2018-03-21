@@ -4,6 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -98,14 +99,17 @@ public class HTTPResponse extends HTTPMessage{
      * @return  A string representation of this response.
      */
     public String toString() {
-        String s = version + ' ' + responseCode + ' ' + reasonPhrase + CRLF +
-                getHeaderString() + CRLF;
         if (hasBody())  {
-            return s + getBody() + CRLF;
+            return headString() + getBody() + CRLF;
         }
         else {
-            return s;
+            return headString();
         }
+    }
+
+    public String headString() {
+        return version + " " + responseCode + " " + reasonPhrase + CRLF +
+                getHeaderString() + CRLF;
     }
 
     public boolean success() {

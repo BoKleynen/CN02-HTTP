@@ -12,9 +12,9 @@ import static org.apache.commons.io.FileUtils.writeByteArrayToFile;
 @SuppressWarnings("all")
 public class TestClient {
     public static void main(String[] args) throws Exception {
-        URI uri = new URI("//www.tcpipguide.com");
+        URI uri = new URI("//localhost:4444/hgjhgkjh");
 
-        HTTPClientConnection client = new HTTPClientConnection(uri.getHost(), 80);
+        HTTPClientConnection client = new HTTPClientConnection(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 80);
         HTTPRequest request = new HTTPRequest("GET", uri);
         System.out.println(request);
         HTTPResponse response = client.sendRequest(request);

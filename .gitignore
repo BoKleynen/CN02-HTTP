@@ -19,3 +19,7 @@ websites/
 src/\.classpath
 
 src/\.project
+
+\.metadata/
+
+*.class
