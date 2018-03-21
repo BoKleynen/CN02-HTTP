@@ -70,8 +70,8 @@ public class ServerThread extends Thread {
 
                     for (int i=0; i<body.length; i++) {
                         outToClient.write(body[i]);
-                        outToClient.flush();
                     }
+                    outToClient.flush();
                 }
 
                 else {
@@ -124,7 +124,7 @@ public class ServerThread extends Thread {
             requestLine = inFromClient.readLine();
 			if (requestLine != null && requestLine.length() != 0) {
 			    String[] args = requestLine.split(" ");
-			    System.out.println("req: " + requestLine);
+//			    System.out.println("req: " + requestLine);
 			    URI uri = new URI(args[1]);
 			    request = new HTTPRequest(args[0], uri);
 				break;
