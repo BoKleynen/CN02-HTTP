@@ -8,6 +8,7 @@ import http_message.HTTPRequest;
 import http_message.HTTPResponse;
 
 import static java.net.InetAddress.getByName;
+import static java.net.InetAddress.getLocalHost;
 import static java.lang.Integer.parseInt;
 import static http_message.HTTPMessage.CRLF;
 
@@ -24,7 +25,7 @@ public class HTTPClientConnection {
     private BufferedInputStream inFromServer;
 
     HTTPClientConnection(String host, int port) throws IOException {
-        this.socket = new Socket(getByName(host), port);
+        this.socket = host.equals("localhost") ? new Socket(getLocalHost(), port) : new Socket(getByName(host), port);
         this.outToServer = new DataOutputStream(socket.getOutputStream());
         this.inFromServer = new BufferedInputStream(socket.getInputStream());
 

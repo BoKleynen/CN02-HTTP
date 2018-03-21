@@ -10,14 +10,26 @@ import java.net.Socket;
 public class TCPServer {
 	public static final int PORT = 4444;
 
-	public static void main(String[] args) throws IOException {
-		ServerSocket serverSocket = new ServerSocket(PORT);
+	public static void main(String[] args) {
+		ServerSocket serverSocket = null;
+		try {
+			serverSocket = new ServerSocket(PORT);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+
 		System.out.println("Server up");
 		while (true) {
-			// Infinity loop: looking for new clients and making a new thread per client.
-			Socket socket = serverSocket.accept();
-			System.out.println(socket);
-			new ServerThread(socket).start();
+			try {
+				Socket socket = serverSocket.accept();
+				System.out.println(socket);
+				new ServerThread(socket).start();
+
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}
 		}
 	}
 }

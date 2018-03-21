@@ -1,13 +1,10 @@
 package server;
 
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
@@ -16,9 +13,9 @@ import java.util.Locale;
 import java.util.TimeZone;
 import http_message.HTTPRequest;
 import http_message.HTTPResponse;
+import org.apache.commons.io.FileUtils;
 import util.BadRequestException;
 import util.CommandNotFoundException;
-import javax.imageio.ImageIO;
 
 import static http_message.HTTPMessage.CRLF;
 import static org.apache.commons.io.FilenameUtils.getExtension;
@@ -29,68 +26,82 @@ import static org.apache.commons.io.FilenameUtils.getExtension;
  */
 public class ServerThread extends Thread {
 	private Socket socket;
-	private BufferedReader inputFromClient;
+	private BufferedReader inFromClient;
 	private DataOutputStream outToClient;
-    private BufferedImage imageToGet;
-    private OutputStream outToClient2;
-    private Boolean flushFile;
-//    private Path currentRelativePath = Paths.get("");
-//    private String s = currentRelativePath.toAbsolutePath().toString() + "\\files\\";
 
 	ServerThread(Socket socket) throws IOException {
 	    // Set up streams
 		this.socket = socket;
-		inputFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		outToClient = new DataOutputStream(socket.getOutputStream());
-        outToClient2 = new DataOutputStream(socket.getOutputStream());
 	}
 
+	@Override
 	public void run() {
 		Boolean open = true;
+
 		while (open) {
-		    Boolean flushFile = false;
-		    Boolean badRequest = false;
-		    HTTPResponse response = new HTTPResponse();
-		    HTTPRequest request = null;
+		    HTTPResponse response;
+		    HTTPRequest request;
+
             try {
-                // Define request
                 request = getRequest();
                 System.out.println(request.toString());
             } catch (BadRequestException | CommandNotFoundException | IOException | URISyntaxException e) {
-                response.setStatusLine("HTTP/1.1 400 Bad Request");
-                badRequest = true;
+                try {
+                    e.printStackTrace();
+                    send400();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                break;
             }
 
-            if(!badRequest) {
-                try {
-                    // Define response
-                    response = getResponse(request);
-                    System.out.println(response);
-                } catch (Exception e) {
-                    response.setStatusLine("HTTP/1.1 500 Server Error");
-                }
-            }
+            open = !"close".equals(request.getHeader("Connection"));
 
             try {
+                // Define response
+                response = getResponse(request);
+
                 // Output to client
-                if (response.getHeader("Content-Type").contains("image")) {
-                    byte[] body = Base64.getDecoder().decode(request.getBody());
+                if (response.getHeader("Content-Type") != null && response.getHeader("Content-Type").contains("image")) {
+                    byte[] body = Base64.getDecoder().decode(response.getBody());
                     outToClient.writeBytes(response.headString());
 
                     for (int i=0; i<body.length; i++) {
                         outToClient.write(body[i]);
+                        outToClient.flush();
                     }
                 }
 
                 else {
-                    outToClient.writeBytes(request.toString());
+                    outToClient.writeBytes(response.toString());
+                    outToClient.flush();
+                    System.out.println(response.toString());
+                }
+
+                if (!response.success()) {
+                    break;
                 }
 
             } catch (Exception e) {
+                try {
+                    send500();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                open = false;
                 e.printStackTrace();
             }
 		}
-	}
+
+        try {
+            socket.close();
+            System.out.println("closed socket: " + socket.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Make a proper request with the input from client.
@@ -109,7 +120,7 @@ public class ServerThread extends Thread {
 
 		//Method
 		for (;;) {
-			if ((requestLine = inputFromClient.readLine()) != null) {
+			if ((requestLine = inFromClient.readLine()) != null) {
 			    String[] args = requestLine.split(" ");
 			    URI uri = new URI(args[1]);
 			    request = new HTTPRequest(args[0], uri);
@@ -118,7 +129,7 @@ public class ServerThread extends Thread {
 		}
 
 		// Headers
-		while((requestLine = inputFromClient.readLine()).length() != 0) {
+		while((requestLine = inFromClient.readLine()).length() != 0) {
 		    request.addHeader(requestLine);
         }
         if (request.getHeader("Host") == null) {
@@ -134,13 +145,13 @@ public class ServerThread extends Thread {
 		    if (contentLength != -1) {
 		        char[] body = new char[contentLength];
 		        for (int i=0; i < contentLength; i++){
-		            body[i] = (char) inputFromClient.read();
+		            body[i] = (char) inFromClient.read();
                 }
                 request.setBody(new String(body));
             }
             else {
 		        StringBuilder body = new StringBuilder();
-		        while((requestLine = inputFromClient.readLine()).length() != 0) {
+		        while((requestLine = inFromClient.readLine()).length() != 0) {
 		            body.append(requestLine);
 		            body.append(CRLF);
                 }
@@ -161,30 +172,19 @@ public class ServerThread extends Thread {
      * @throws IOException
      */
 	private HTTPResponse getResponse(HTTPRequest clientRequest) throws ParseException, IOException {
-//        // Date header
-//        Date date= new Date();
-//        SimpleDateFormat dateTemplate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz" , Locale.ENGLISH);
-//        dateTemplate.setTimeZone(TimeZone.getTimeZone("GMT"));
-//        serverResponse.addHeader("Date", dateTemplate.format(date));
-
         // Methods
-        HTTPResponse response = null;
         switch (clientRequest.getMethod()) {
             case "HEAD":
-                response = getHeadResponse(clientRequest);
-                break;
+                return getHeadResponse(clientRequest);
             case "GET":
-                response = getGetResponse(clientRequest);
-                break;
-//            case "PUT":
-//                methodPUT(clientRequest, serverResponse);
-//                break;
-//            case "POST":
-//                methodPOST(clientRequest, serverResponse);
-//                break;
+                return getGetResponse(clientRequest);
+            case "PUT":
+                return methodPUT(clientRequest);
+            case "POST":
+                return methodPOST(clientRequest);
         }
 
-        return response;
+        return null;
     }
 
     private File getResource(HTTPRequest request) {
@@ -232,82 +232,87 @@ public class ServerThread extends Thread {
 
                 if (ifModifiedDate.compareTo(lastModified) > 0) {
                     response.setStatusLine("HTTP/1.1 304 Not Modified");
+                    addCommonHeaders(response);
+                    response.addHeader("Connection", "Keep-Alive");
+
                 }
             }
+
             String contentType = getContentType(resource);
             response.addHeader("Content-Type", contentType);
             response.addHeader("Content-Length", Long.toString(resource.length()));
+
             if (contentType.contains("text")) {
                 BufferedReader reader = new BufferedReader(new FileReader(resource));
-                response.setStatusLine("HTTP/1.1 200 OK");
                 String message = org.apache.commons.io.IOUtils.toString(reader);
                 response.setBody(message);
                 reader.close();
+                response.setStatusLine("HTTP/1.1 200 OK");
+                addCommonHeaders(response);
+                response.addHeader("Connection", "Keep-Alive");
             }
 
             else {
                 byte[] imageBytes = Files.readAllBytes(resource.toPath());
                 response.setBody(Base64.getEncoder().encodeToString(imageBytes));
                 response.setStatusLine("HTTP/1.1 200 OK");
+                addCommonHeaders(response);
+                response.addHeader("Connection", "Keep-Alive");
             }
         }
 
         else {
-            response.setStatusLine("HTTP/1.1 404 Page not found");
-            addCommonHeaders(response);
+            return error404();
         }
 
         return response;
     }
 
-//    /**
-//     * Processes the PUT method.
-//     * Create a new file or overwrite the file, with the given input, on the give path directory.
-//     * @param clientRequest
-//     *         The request of the client
-//     * @param serverResponse
-//     *         The half-made response to the request of the client.
-//     * @throws FileNotFoundException
-//     *          If there is no file in the path directory.
-//     */
-//    private void methodPUT(HTTPRequest clientRequest, HTTPResponse serverResponse) throws FileNotFoundException {
-//        // Create or overwrite file
-//        PrintWriter writer = new PrintWriter(s + clientRequest.getPath());
-//        writer.print(clientRequest.getBody());
-//        writer.close();
-//        serverResponse.setStatusLine("HTTP/1.1 200 OK");
-//    }
-//
-//    /**
-//     * Processes the POST method
-//     * Create a new filen, with the given input, when there is no file on the path directory,
-//     * otherwise adds the given input to the bottom of the file.
-//     * @param clientRequest
-//     *         The request of the client
-//     * @param serverResponse
-//     *         The half-made response to the request of the client.
-//     * @throws IOException
-//     */
-//    private void methodPOST(HTTPRequest clientRequest, HTTPResponse serverResponse) throws IOException {
-//        File file = new File(s + clientRequest.getPath());
-//
-//        // Look if file exists
-//        if (!file.exists()) {
-//            file.createNewFile();
-//        }
-//
-//        // Add to file
-//        FileWriter writer = new FileWriter(file, true);
-//        writer.write(clientRequest.getBody());
-//        writer.flush();
-//        writer.close();
-//        serverResponse.setStatusLine("HTTP/1.1 200 OK");
-//    }
+    /**
+     * Processes the PUT method.
+     * Create a new file or overwrite the file, with the given input, on the give path directory.
+     * @param request
+     *         The request of the client
+     * @throws FileNotFoundException
+     *          If there is no file in the path directory.
+     */
+    private HTTPResponse methodPUT(HTTPRequest request) throws IOException {
+        File resource = getResource(request);
+        HTTPResponse response = new HTTPResponse();
+
+        FileUtils.writeStringToFile(resource, request.getBody());
+        response.setStatusLine("HTTP/1.1 200 OK");
+        addCommonHeaders(response);
+        response.addHeader("Connection", "Keep-Alive");
+
+        return response;
+    }
+
+    /**
+     * Processes the POST method
+     * Create a new filen, with the given input, when there is no file on the path directory,
+     * otherwise adds the given input to the bottom of the file.
+     * @param request
+     *         The request of the client
+     * @throws IOException
+     */
+    private HTTPResponse methodPOST(HTTPRequest request) throws IOException {
+        File resource = getResource(request);
+        HTTPResponse response = new HTTPResponse();
+
+        // Add to file
+        FileUtils.writeStringToFile(resource, request.getBody(), true);
+        response.setStatusLine("HTTP/1.1 200 OK");
+        addCommonHeaders(response);
+        response.addHeader("Connection", "Keep-Alive");
+
+        return response;
+    }
 
     private void addCommonHeaders(HTTPResponse response) {
         response.addHeader("Authors: Bo Kleynen, Maarten Boogaerts");
         Date date = new Date();
-        response.addHeader("Date: " + date.toString());
+        response.addHeader("Date", date.toString());
     }
 
     private String getContentType(File file) {
@@ -321,6 +326,61 @@ public class ServerThread extends Thread {
             default:
                 return "image/" + extension;
         }
+    }
+
+    private void send400() throws IOException {
+        HTTPResponse response = new HTTPResponse();
+        response.setStatusLine("HTTP/1.1 400 Not Found");
+        addCommonHeaders(response);
+        response.addHeader("Connection", "close");
+        BufferedReader br = new BufferedReader(new FileReader("files/400BadRequest.html"));
+        StringBuilder body = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            body.append(line);
+            body.append(CRLF);
+        }
+        response.setBody(body.toString());
+        response.addHeader("Content-Type", "text/html");
+        response.addHeader("Content-Length", Integer.toString(response.getBody().length()));
+        outToClient.writeBytes(response.toString());
+    }
+
+    private HTTPResponse error404() throws IOException {
+        HTTPResponse response = new HTTPResponse();
+        response.setStatusLine("HTTP/1.1 404 Not Found");
+        addCommonHeaders(response);
+        response.addHeader("Connection", "close");
+        BufferedReader br = new BufferedReader(new FileReader("files/404NotFound.html"));
+        StringBuilder body = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            body.append(line);
+            body.append(CRLF);
+        }
+        response.setBody(body.toString());
+        response.addHeader("Content-Type", "text/html");
+        response.addHeader("Content-Length", Integer.toString(response.getBody().length()));
+
+        return response;
+    }
+
+    private void send500() throws IOException {
+        HTTPResponse response = new HTTPResponse();
+        response.setStatusLine("HTTP/1.1 500 Not Found");
+        addCommonHeaders(response);
+        response.addHeader("Connection", "close");
+        BufferedReader br = new BufferedReader(new FileReader("files/500InternalServerError.html"));
+        StringBuilder body = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            body.append(line);
+            body.append(CRLF);
+        }
+        response.setBody(body.toString());
+        response.addHeader("Content-Type", "text/html");
+        response.addHeader("Content-Length", Integer.toString(response.getBody().length()));
+        outToClient.writeBytes(response.toString());
     }
 
 }
