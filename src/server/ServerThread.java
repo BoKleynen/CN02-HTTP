@@ -77,8 +77,9 @@ public class ServerThread extends Thread {
                 else {
                     outToClient.writeBytes(response.toString());
                     outToClient.flush();
-                    System.out.println(response.toString());
                 }
+
+                System.out.println(response.toString());
 
                 if (!response.success()) {
                     break;
@@ -194,8 +195,7 @@ public class ServerThread extends Thread {
         }
 
         else {
-            file = new File(request.getPath());
-            String extension = request.getPath().substring(request.getPath().lastIndexOf(".") + 1);
+            file = new File("files/" + request.getPath());
         }
 
         return file;
@@ -208,11 +208,14 @@ public class ServerThread extends Thread {
             response.setStatusLine("HTTP/1.1 200 OK");
             response.addHeader("Content-Type: " + getContentType(resource));
             response.addHeader("Content-Length: " + resource.length());
+            response.addHeader("Connection", "Keep-Alive");
+            addCommonHeaders(response);
         }
 
         else {
             response.setStatusLine("HTTP/1.1 404 Page not found");
             addCommonHeaders(response);
+            response.addHeader("Connection", "close");
         }
 
         return response;
