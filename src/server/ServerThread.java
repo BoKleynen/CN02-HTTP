@@ -3,22 +3,25 @@ package server;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
-
 import http_message.HTTPRequest;
 import http_message.HTTPResponse;
 import util.BadRequestException;
 import util.CommandNotFoundException;
-
 import javax.imageio.ImageIO;
 
 import static http_message.HTTPMessage.CRLF;
+import static org.apache.commons.io.FilenameUtils.getExtension;
 
 /**
  * This class processes the request of the client's request
@@ -31,8 +34,8 @@ public class ServerThread extends Thread {
     private BufferedImage imageToGet;
     private OutputStream outToClient2;
     private Boolean flushFile;
-    private Path currentRelativePath = Paths.get("");
-    private String s = currentRelativePath.toAbsolutePath().toString() + "\\files\\";
+//    private Path currentRelativePath = Paths.get("");
+//    private String s = currentRelativePath.toAbsolutePath().toString() + "\\files\\";
 
 	ServerThread(Socket socket) throws IOException {
 	    // Set up streams
@@ -53,7 +56,7 @@ public class ServerThread extends Thread {
                 // Define request
                 request = getRequest();
                 System.out.println(request.toString());
-            } catch (Exception e) {
+            } catch (BadRequestException | CommandNotFoundException | IOException | URISyntaxException e) {
                 response.setStatusLine("HTTP/1.1 400 Bad Request");
                 badRequest = true;
             }
@@ -70,12 +73,21 @@ public class ServerThread extends Thread {
 
             try {
                 // Output to client
-                outToClient.writeBytes(response.toString());
-                if (flushFile) {
-                    ImageIO.write(imageToGet, "png", socket.getOutputStream());
+                if (response.getHeader("Content-Type").contains("image")) {
+                    byte[] body = Base64.getDecoder().decode(request.getBody());
+                    outToClient.writeBytes(response.headString());
+
+                    for (int i=0; i<body.length; i++) {
+                        outToClient.write(body[i]);
+                    }
                 }
+
+                else {
+                    outToClient.writeBytes(request.toString());
+                }
+
             } catch (Exception e) {
-                System.out.println("ERROR");
+                e.printStackTrace();
             }
 		}
 	}
@@ -91,14 +103,16 @@ public class ServerThread extends Thread {
      *          If the request has no host-header.
      *
      */
-	private HTTPRequest getRequest() throws CommandNotFoundException, IOException, BadRequestException {
+	private HTTPRequest getRequest() throws CommandNotFoundException, IOException, BadRequestException, URISyntaxException {
 		String requestLine;
 		HTTPRequest request;
 
 		//Method
 		for (;;) {
 			if ((requestLine = inputFromClient.readLine()) != null) {
-				request = new HTTPRequest(requestLine);
+			    String[] args = requestLine.split(" ");
+			    URI uri = new URI(args[1]);
+			    request = new HTTPRequest(args[0], uri);
 				break;
 			}
 		}
@@ -147,153 +161,166 @@ public class ServerThread extends Thread {
      * @throws IOException
      */
 	private HTTPResponse getResponse(HTTPRequest clientRequest) throws ParseException, IOException {
-	    HTTPResponse serverResponse = new HTTPResponse();
-
-        // Date header
-        Date date= new Date();
-        SimpleDateFormat dateTemplate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz" , Locale.ENGLISH);
-        dateTemplate.setTimeZone(TimeZone.getTimeZone("GMT"));
-        serverResponse.addHeader("Date", dateTemplate.format(date));
-
-        // Content-type header
-        String path =clientRequest.getPath();
-        if (path.equals("") || path.endsWith(".html")) {
-            serverResponse.addHeader("Content-Type", "text/html");
-        }
-        else if (path.endsWith(".txt")) {
-            serverResponse.addHeader("Content-Type", "text/plain");
-        }
-        else {
-            serverResponse.addHeader("Content-Type", "image" + "/" + clientRequest.getPath());
-        }
+//        // Date header
+//        Date date= new Date();
+//        SimpleDateFormat dateTemplate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz" , Locale.ENGLISH);
+//        dateTemplate.setTimeZone(TimeZone.getTimeZone("GMT"));
+//        serverResponse.addHeader("Date", dateTemplate.format(date));
 
         // Methods
+        HTTPResponse response = null;
         switch (clientRequest.getMethod()) {
             case "HEAD":
-                serverResponse.setStatusLine("HTTP/1.1 200 OK");
+                response = getHeadResponse(clientRequest);
                 break;
             case "GET":
-                methodGET(clientRequest, serverResponse);
+                response = getGetResponse(clientRequest);
                 break;
-            case "PUT":
-                methodPUT(clientRequest, serverResponse);
-                break;
-            case "POST":
-                methodPOST(clientRequest, serverResponse);
-                break;
+//            case "PUT":
+//                methodPUT(clientRequest, serverResponse);
+//                break;
+//            case "POST":
+//                methodPOST(clientRequest, serverResponse);
+//                break;
         }
 
-        // Content-Length header
-        int contentLength;
-        if (serverResponse.getBody().equals("")) {
-            contentLength = 0;
-        }
-        else {
-            contentLength = serverResponse.getBody().length();
-        }
-        serverResponse.addHeader("Content-Length", Integer.toString(contentLength));
-
-        return serverResponse;
+        return response;
     }
 
-    /**
-     * Processes the GET method.
-     * @param clientRequest
-     *         The request of the client
-     * @param serverResponse
-     *         The half-made response to the request of the client.
-     * @throws ParseException
-     *          If the date is wrongly defined
-     * @throws IOException
-     */
-    private void methodGET(HTTPRequest clientRequest, HTTPResponse serverResponse) throws ParseException, IOException {
-        File file = new File(s+ clientRequest.getPath());
-
-        //Check if file exists
-        if (!file.exists()) {
-            serverResponse.setStatusLine("HTTP/1.1 404 Not Found");
-            return;
+    private File getResource(HTTPRequest request) {
+        File file;
+        if (request.getPath().equals("/") || request.getPath().equals("")) {
+            file = new File("files/index.html");
         }
-        //If-Modified-since
-        String temp;
-        if ((temp = clientRequest.getHeader("If-Modified-Since")) != null) {
-            SimpleDateFormat parser = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
-            parser.setTimeZone(TimeZone.getTimeZone("GMT"));
-            Date ifModifiedDate = parser.parse(temp.toString());
 
-            long lastModified = file.lastModified();
-            Date dateLastModified = new Date(lastModified);
+        else {
+            file = new File(request.getPath());
+            String extension = request.getPath().substring(request.getPath().lastIndexOf(".") + 1);
+        }
 
-            if (ifModifiedDate.compareTo(dateLastModified) > 0) {
-                serverResponse.setStatusLine("HTTP/1.1 304 Not Modified");
-                return;
+        return file;
+    }
+
+    private HTTPResponse getHeadResponse(HTTPRequest request) {
+        File resource = getResource(request);
+        HTTPResponse response = new HTTPResponse();
+        if (resource.exists()) {
+            response.setStatusLine("HTTP/1.1 200 OK");
+            response.addHeader("Content-Type: " + getContentType(resource));
+            response.addHeader("Content-Length: " + resource.length());
+        }
+
+        else {
+            response.setStatusLine("HTTP/1.1 404 Page not found");
+            addCommonHeaders(response);
+        }
+
+        return response;
+    }
+
+    private HTTPResponse getGetResponse(HTTPRequest request) throws ParseException, IOException {
+	    File resource = getResource(request);
+        HTTPResponse response = new HTTPResponse();
+
+        if (resource.exists()) {
+            String temp;
+            if ((temp = request.getHeader("If-Modified-Since")) != null) {
+                SimpleDateFormat parser = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
+                parser.setTimeZone(TimeZone.getTimeZone("GMT"));
+                Date ifModifiedDate = parser.parse(temp);
+                Date lastModified = new Date(resource.lastModified());
+
+                if (ifModifiedDate.compareTo(lastModified) > 0) {
+                    response.setStatusLine("HTTP/1.1 304 Not Modified");
+                }
+            }
+            String contentType = getContentType(resource);
+            response.addHeader("Content-Type", contentType);
+            response.addHeader("Content-Length", Long.toString(resource.length()));
+            if (contentType.contains("text")) {
+                BufferedReader reader = new BufferedReader(new FileReader(resource));
+                response.setStatusLine("HTTP/1.1 200 OK");
+                String message = org.apache.commons.io.IOUtils.toString(reader);
+                response.setBody(message);
+                reader.close();
+            }
+
+            else {
+                byte[] imageBytes = Files.readAllBytes(resource.toPath());
+                response.setBody(Base64.getEncoder().encodeToString(imageBytes));
+                response.setStatusLine("HTTP/1.1 200 OK");
             }
         }
 
-        String path =clientRequest.getPath();
-        // Non-image files
-        if (path.equals("") || path.endsWith(".html") || path.endsWith(".txt")) {
-            BufferedReader fileToGet = new BufferedReader(new FileReader(s + path));
-            serverResponse.setStatusLine("HTTP/1.1 200 OK");
-            String message = org.apache.commons.io.IOUtils.toString(fileToGet);
-            serverResponse.setBody(message);
-            fileToGet.close();
-        }
-        // Image files
-        else{
-            BufferedImage imageToGet = ImageIO.read(new File(s + path));
-            System.out.println(s + path);
-            System.out.println(imageToGet);
-//            ImageIO.write(imageToGet, "png", bos );
-            flushFile = true;
-            serverResponse.setStatusLine("HTTP/1.1 200 OK");
+        else {
+            response.setStatusLine("HTTP/1.1 404 Page not found");
+            addCommonHeaders(response);
         }
 
-
+        return response;
     }
 
-    /**
-     * Processes the PUT method.
-     * Create a new file or overwrite the file, with the given input, on the give path directory.
-     * @param clientRequest
-     *         The request of the client
-     * @param serverResponse
-     *         The half-made response to the request of the client.
-     * @throws FileNotFoundException
-     *          If there is no file in the path directory.
-     */
-    private void methodPUT(HTTPRequest clientRequest, HTTPResponse serverResponse) throws FileNotFoundException {
-        // Create or overwrite file
-        PrintWriter writer = new PrintWriter(s + clientRequest.getPath());
-        writer.print(clientRequest.getBody());
-        writer.close();
-        serverResponse.setStatusLine("HTTP/1.1 200 OK");
+//    /**
+//     * Processes the PUT method.
+//     * Create a new file or overwrite the file, with the given input, on the give path directory.
+//     * @param clientRequest
+//     *         The request of the client
+//     * @param serverResponse
+//     *         The half-made response to the request of the client.
+//     * @throws FileNotFoundException
+//     *          If there is no file in the path directory.
+//     */
+//    private void methodPUT(HTTPRequest clientRequest, HTTPResponse serverResponse) throws FileNotFoundException {
+//        // Create or overwrite file
+//        PrintWriter writer = new PrintWriter(s + clientRequest.getPath());
+//        writer.print(clientRequest.getBody());
+//        writer.close();
+//        serverResponse.setStatusLine("HTTP/1.1 200 OK");
+//    }
+//
+//    /**
+//     * Processes the POST method
+//     * Create a new filen, with the given input, when there is no file on the path directory,
+//     * otherwise adds the given input to the bottom of the file.
+//     * @param clientRequest
+//     *         The request of the client
+//     * @param serverResponse
+//     *         The half-made response to the request of the client.
+//     * @throws IOException
+//     */
+//    private void methodPOST(HTTPRequest clientRequest, HTTPResponse serverResponse) throws IOException {
+//        File file = new File(s + clientRequest.getPath());
+//
+//        // Look if file exists
+//        if (!file.exists()) {
+//            file.createNewFile();
+//        }
+//
+//        // Add to file
+//        FileWriter writer = new FileWriter(file, true);
+//        writer.write(clientRequest.getBody());
+//        writer.flush();
+//        writer.close();
+//        serverResponse.setStatusLine("HTTP/1.1 200 OK");
+//    }
+
+    private void addCommonHeaders(HTTPResponse response) {
+        response.addHeader("Authors: Bo Kleynen, Maarten Boogaerts");
+        Date date = new Date();
+        response.addHeader("Date: " + date.toString());
     }
 
-    /**
-     * Processes the POST method
-     * Create a new filen, with the given input, when there is no file on the path directory,
-     * otherwise adds the given input to the bottom of the file.
-     * @param clientRequest
-     *         The request of the client
-     * @param serverResponse
-     *         The half-made response to the request of the client.
-     * @throws IOException
-     */
-    private void methodPOST(HTTPRequest clientRequest, HTTPResponse serverResponse) throws IOException {
-        File file = new File(s + clientRequest.getPath());
+    private String getContentType(File file) {
+        String extension = getExtension(file.toString());
 
-        // Look if file exists
-        if (!file.exists()) {
-            file.createNewFile();
+        switch (extension) {
+            case "txt":
+                return "text/plain";
+            case "html":
+                return "text/html";
+            default:
+                return "image/" + extension;
         }
-
-        // Add to file
-        FileWriter writer = new FileWriter(file, true);
-        writer.write(clientRequest.getBody());
-        writer.flush();
-        writer.close();
-        serverResponse.setStatusLine("HTTP/1.1 200 OK");
     }
 
 }
